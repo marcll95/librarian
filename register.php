@@ -10,6 +10,9 @@
 	$relativeID = $id % $modulobase;
 	$savedir = $id - $relativeID;
 
+	$relPath = $savedir.'/'.$_POST['MD5'];
+	$repository = str_replace('\\','/',realpath($repository));
+
 	// check correctness of numerical values (they cannot be equal to empty strings)
 	// and some textual
 	$year = $_POST['Year'];
@@ -49,6 +52,8 @@
 	$cleaned = clean('Cleaned');
 	$commentary = clean('Commentary');
 	$series = clean('Series');
+	$udc = clean('UDC');
+	$lbc = clean('LBC');
 
 	// open file read-only and lock before SQL-query
 	if (!$_POST['Edit']){
@@ -59,12 +64,10 @@
 
 		if (!flock($h,LOCK_EX)) die("<p>Cannot lock temporary file '".$file."'");
 
-		$relPath = $savedir.'/'.$_POST['MD5'];
-
-		$sql="INSERT INTO $dbtable (ID,Topic,Author,Title,VolumeInfo,Year,Publisher,Edition,Identifier,Pages,Filesize,Issue,Orientation,DPI,Color,Cleaned,Language,MD5,Extension,Library,Commentary,Series) VALUES
-		('$id','$topic','$author','$title','$volinfo','$year','$publisher','$edition','$identifier','$pages','$_POST[Filesize]','$issue','$orientation','$dpi','$color','$cleaned','$language','$_POST[MD5]','$_POST[Extension]','$library','$commentary','$series')";
+		$sql="INSERT INTO $dbtable (ID,Topic,Author,Title,VolumeInfo,Year,Publisher,Edition,Identifier,Pages,Filesize,Issue,Orientation,DPI,Color,Cleaned,Language,MD5,Extension,Library,Commentary,Series,UDC,LBC) VALUES
+		('$id','$topic','$author','$title','$volinfo','$year','$publisher','$edition','$identifier','$pages','$_POST[Filesize]','$issue','$orientation','$dpi','$color','$cleaned','$language','$_POST[MD5]','$_POST[Extension]','$library','$commentary','$series','$udc','$lbc')";
 	} else {
-		$sql="UPDATE $dbtable SET `Generic`='$generic',`Topic`='$topic',`Author`='$author',`Title`='$title',`VolumeInfo`='$volinfo',`Year`='$year',`Publisher`='$publisher',`Edition`='$edition',`Identifier`='$identifier',`Pages`='$pages',`Issue`='$issue',`Orientation`='$orientation',`DPI`='$dpi',`Color`='$color',`Cleaned`='$cleaned',`Language`='$language',`Extension`='$_POST[Extension]',`Library`='$library',`Commentary`='$commentary',`Series`='$series' WHERE `MD5`='$_POST[MD5]' LIMIT 1";
+		$sql="UPDATE $dbtable SET `Generic`='$generic',`Topic`='$topic',`Author`='$author',`Title`='$title',`VolumeInfo`='$volinfo',`Year`='$year',`Publisher`='$publisher',`Edition`='$edition',`Identifier`='$identifier',`Pages`='$pages',`Issue`='$issue',`Orientation`='$orientation',`DPI`='$dpi',`Color`='$color',`Cleaned`='$cleaned',`Language`='$language',`Extension`='$_POST[Extension]',`Library`='$library',`Commentary`='$commentary',`Series`='$series',`UDC`='$udc',`LBC`='$lbc' WHERE `MD5`='$_POST[MD5]' LIMIT 1";
 	}
 
 	if (!mysql_query($sql,$con))
@@ -83,6 +86,10 @@
 		fclose($h);
 
 		@unlink($file);
+
+		$sql="UPDATE $dbtable SET `Filename`='$relPath' WHERE `ID`='$id' LIMIT 1";
+		if (!mysql_query($sql,$con))
+			die('Error: ' . mysql_error());
 	}
 
 	mysql_query('UNLOCK TABLES');
@@ -95,7 +102,7 @@
 function clean($var){
 	$c = "'\\";
 	$str = str_replace("\t",' ',$_POST[$var]); // replace tabs
-	$str = preg_replace('/\s\s+/',' ',$str); // delete multiple spaces
+//   $str = preg_replace('/\s\s+/',' ',$str); // delete multiple spaces
 	return trim(addcslashes($str,$c));
 }
 
