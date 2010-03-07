@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 	include 'connect.php';
 	include 'html.php';
 	// form 1 (new record) and 2 (editing) defaults
@@ -8,9 +8,10 @@
 	$volinfo = '';
 	$year = '';
 	$publisher = '';
+        $city = '';
 	$edition = '';
 	$pages = '';
-	$identifier = ''; //'ISBN '
+	$identifier = ''; //'ISBN10:'
 	$language = '';
 	$library = '';
 	$issue = '';
@@ -20,9 +21,11 @@
 	$cleaned = '';
 	$commentary = '';
 	$series = '';
+        $periodical = '';
 	$udc = '';
 	$lbc = '';
 	$bookcode = '';
+	$coverurl = '';
 	// form 1 or 2 submitted?
 	if ($_POST['Form'] == 1)
 	{
@@ -94,6 +97,7 @@
 		$udc = htmlspecialchars($rows['UDC'],ENT_QUOTES);
 		$lbc = htmlspecialchars($rows['LBC'],ENT_QUOTES);
 		$bookcode = htmlspecialchars($rows['BooksellingCode'],ENT_QUOTES);
+		$coverurl = htmlspecialchars($rows['Coverurl'],ENT_QUOTES);
 	} else {
 		$editing = false;
 		$mode = "<font color=green><h1>Registering a new book \\ Регистрация новой книги</h1></font>";
@@ -125,9 +129,11 @@
             $publisher = htmlspecialchars($amazonInfo['Publisher'],ENT_QUOTES);
             $edition = htmlspecialchars($amazonInfo['Edition'],ENT_QUOTES);
             $pages = htmlspecialchars($amazonInfo['Pages'],ENT_QUOTES);
-            $identifier = 'ISBN '.htmlspecialchars($amazonInfo['ISBN'],ENT_QUOTES);
+            $identifier = 'ISBN10:'.htmlspecialchars($amazonInfo['ISBN'],ENT_QUOTES);
             $language = htmlspecialchars($amazonInfo['Language'],ENT_QUOTES);
-            $commentary = htmlspecialchars($amazonInfo['Content'],ENT_QUOTES); 
+            $commentary = htmlspecialchars($amazonInfo['Content'],ENT_QUOTES);
+            $coverurl = htmlspecialchars($amazonInfo['Image'],ENT_QUOTES);
+             
                
         }   
     }
@@ -159,17 +165,46 @@
             $publisher = htmlspecialchars($ozonInfo['Publisher'],ENT_QUOTES);
             $year = htmlspecialchars($ozonInfo['Year'],ENT_QUOTES);
             $pages = htmlspecialchars($ozonInfo['Pages'],ENT_QUOTES);
-            $identifier = 'ISBN '.$isbn;
+            $identifier = 'ISBN10:'.$isbn;
             $commentary = htmlspecialchars($ozonInfo['Content'],ENT_QUOTES);
-            $topic = htmlspecialchars($ozonInfo['Topic'],ENT_QUOTES); 
+            $topic = htmlspecialchars($ozonInfo['Topic'],ENT_QUOTES);
+            $coverurl = htmlspecialchars($ozonInfo['Image'], ENT_QUOTES);
+            $coverurl = str_replace("/small", "", $image);
+            $coverurl = str_replace(".gif", ".jpg", $image); 
                
         }   
     }
     
+    //RGB
+    if(isset($_POST['rgb'])){
+        
+        
+        $filesize = $_GET['filesize'];
+        $fileext = $_GET['fileext'];
+        
+        $number = htmlspecialchars($_POST['isbn']);
+        
+        if( !(substr_count(trim($number),'-') == 3)&&(strlen(trim($number))==13) || !(substr_count(trim($number),'-') == 4)&&(strlen(trim($number))==17)){
+            
+            require_once 'ISBN-0.1.6/ISBN.php';
+            $isbn = new ISBN($number);
+            $number = substr($isbn->getISBNDisplayable(),9);
+            
+        }
+       
+        $isbn = $number;
+        
+        include 'rgbRequest.php';
+        
+    }
+    
     $isbnForm = "<form action='registration.php?md5=".$md5."&filesize=".$filesize."&fileext=".$fileext."' method='post' >
 ISBN: <input type='text' name='isbn' size='20' maxlength='25' value='".htmlspecialchars($_POST['isbn'],ENT_QUOTES)."' />
-<input type='submit' value='Info from Amazon' name='amazon'/>
-<input type='submit' value='Info from Ozon' name='ozon'/>\t".$amazonError.$ozonError."</form>";
+search in: 
+<input type='submit' value='Amazon' name='amazon'/>
+<input type='submit' value='Ozon' name='ozon'/>
+<input type='submit' value='RSL' name='rgb'/>
+\t".$amazonError.$ozonError.$rgbError."</form>";
    
     $regform = $htmlheadfocus.$isbnForm."<form action='register.php' method='post'>
 <table width=100% border=0 cellspacing=0>
@@ -181,10 +216,12 @@ ISBN: <input type='text' name='isbn' size='20' maxlength='25' value='".htmlspeci
 <tr><td><font face=arial size=3><b>Year of Issue \\ Год издания</b></font><td><input type='text' name='Year' size=10 value='".$year."' maxlength=10/>
 <tr><td><font face=arial size=3><b>Edition \\ Издание</b></font><td><input type='text' name='Edition' size=10 value='".$edition."' maxlength=50/>
 <tr><td><font face=arial size=3><b>Series \\ Серия</b> <font size=2 color=gray>(вместе с порядковым № в серии)</font></font><td><input type='text' name='Series' size=90 value='".$series."' maxlength=300/>
+<tr><td><font face=arial size=3><b>Periodical \\ Журналы</b> <font size=2 color=gray>(вместе с №, напр. Левша 2009-06)</font></font><td><input type='text' name='Periodical' size=90 value='".$periodical."' maxlength=300/>
 <tr><td><font face=arial size=3><b><a href='http://free-books.dontexist.com/librarian/publisher.txt'>Publisher \\ Издательство</b></font><td><input type='text' name='Publisher' size=90 value='".$publisher."' maxlength=200/>
+<tr><td><font face=arial size=3><b>City \\ Город</b></font><td><input type='text' name='City' size=90 value='".$city."' maxlength=200/>
 <tr><td><font face=arial size=3><b>Number of Pages \\ Число страниц</b></font><td><input type='text' name='Pages' size=5 value='".$pages."' maxlength=10/>
 <tr><td><font face=arial size=3><b><a href='http://free-books.dontexist.com/librarian/lang.txt'>Language</b> <font size=2 color=gray>(Russian, English, ...)</font></font><td><input type='text' name='Language' size=90 value='".$language."' maxlength=50/>
-<tr><td><font face=arial size=3><b>ISBN</b> <font size=2 color=gray>(только 10 или 13 цифр без '-' и ' ')</font></font><td><input type='text' name='Identifier' size=20 value='".$identifier."' maxlength=100/>
+<tr><td><font face=arial size=3><b>ISBN</b> <font size=2 color=gray>(только 10 или 13 цифр с '-' и ' ')</font></font><td><input type='text' name='Identifier' size=20 value='".$identifier."' maxlength=100/>
 <tr><td><font face=arial size=3><b>Library \\ Библиотека</b> <font size=2 color=gray>(kolxoz, homelab, ...)</font></font><td><input type='text' name='Library' size=10 value='".$library."' maxlength=50/>
 <tr><td><font face=arial size=3><b>Issue \\ Издание библиотеки</b> <font size=2 color=gray>(DVD-, release №, ...)</font></font><td><input type='text' name='Issue' size=5 value='".$issue."' maxlength=10/>
 <tr><td><font face=arial size=3><b>Orientation \\ Ориентация скана</b> <font size=2 color=gray>(landscape, portrait)</font></font><td><input type='text' name='Orientation' size=15 value='".$orientation."' maxlength=50/>
@@ -195,6 +232,7 @@ ISBN: <input type='text' name='isbn' size='20' maxlength='25' value='".htmlspeci
 <tr><td><font face=arial size=3><b>MD5 of a Better Version \\ MD5 лучшей версии</b></font><td><input type='text' name='Generic' size=35 value='".$generic."' maxlength=32/>
 <tr><td><font face=arial size=3><b><a href='http://en.wikipedia.org/wiki/Universal_Decimal_Classification'>UDC \\ УДК</a></b></font><td><input type='text' name='UDC' size=90 value='".$udc."' maxlength=50/>
 <tr><td><font face=arial size=3><b><a href='http://www.indiana.edu/~libslav/slavcatman/bbkover.html'>LBC \\ ББК</a></b></font><td><input type='text' name='LBC' size=90 value='".$lbc."' maxlength=50/>
+<tr><td><font face=arial size=3><b>Cover \\ Обложка</b> <font size=2 color=gray>(URL)</font></font><td><input type='text' name='Coverurl' size=90 value='".$coverurl."' maxlength=500/>
 
 <tr><td><font face=arial size=3 color=gray><b>Filesize \\ Размер файла</b> <font size=2>(bytes)</font></font><td><input readonly type='text' name='Filesize' size=10 value='".$filesize."' maxlength=20/>
 <tr><td><font face=arial size=3 color=gray><b>MD5</b></font><td><input readonly type='text' name='MD5' size=35 value='".$md5."' maxlength=32/>
@@ -225,7 +263,7 @@ ISBN: <input type='text' name='isbn' size='20' maxlength='25' value='".htmlspeci
 
 	// edit, if MD5 found
 	if ($_POST['Form'] == 2){
-		if ($editing || isset($_POST['amazon']) || isset($_POST['ozon'])) echo $regform;
+		if ($editing || isset($_POST['amazon']) || isset($_POST['ozon']) || isset($_POST['rgb'])) echo $regform;
 		else echo $htmlhead."<font color='#A00000'><h1>Book not found</h1></font>There is no such book in the database.<br>You are welcome to upload this piece!<p><a href='registration.php'>Go back to the upload page</a><p><h2>Thank you!</h2>".$htmlfoot;
 	}
 ?>

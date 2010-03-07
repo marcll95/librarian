@@ -25,7 +25,7 @@
 	if ($pages == '') $pages = 0;
 	if ($issue == '') $issue = 0;
 	if ($dpi == '') $dpi = 0;
-	if ($identifier == 'ISBN ') $identifier = '';
+	if ($identifier == 'ISBN10:') $identifier = '';
 
 	// escape single quotes
 
@@ -43,6 +43,7 @@
 	$author = clean('Author');
 	$volinfo = clean('VolumeInfo');
 	$publisher = clean('Publisher');
+        $city = clean('City');
 	$edition = clean('Edition');
 	$identifier = clean('Identifier');
 	$language = clean('Language');
@@ -52,8 +53,10 @@
 	$cleaned = clean('Cleaned');
 	$commentary = clean('Commentary');
 	$series = clean('Series');
+        $periodical = clean('Periodical');
 	$udc = clean('UDC');
 	$lbc = clean('LBC');
+        $coverurl = clean('Coverurl');
 
 	// open file read-only and lock before SQL-query
 	if (!$_POST['Edit']){
@@ -64,10 +67,10 @@
 
 		if (!flock($h,LOCK_EX)) die("<p>Cannot lock temporary file '".$file."'");
 
-		$sql="INSERT INTO $dbtable (ID,Topic,Author,Title,VolumeInfo,Year,Publisher,Edition,Identifier,Pages,Filesize,Issue,Orientation,DPI,Color,Cleaned,Language,MD5,Extension,Library,Commentary,Series,UDC,LBC) VALUES
-		('$id','$topic','$author','$title','$volinfo','$year','$publisher','$edition','$identifier','$pages','$_POST[Filesize]','$issue','$orientation','$dpi','$color','$cleaned','$language','$_POST[MD5]','$_POST[Extension]','$library','$commentary','$series','$udc','$lbc')";
+		$sql="INSERT INTO $dbtable (ID,Topic,Author,Title,VolumeInfo,Year,Publisher,City,Edition,Identifier,Pages,Filesize,Issue,Orientation,DPI,Color,Cleaned,Language,MD5,Extension,Library,Commentary,Series,Periodical,UDC,LBC,Coverurl) VALUES
+		('$id','$topic','$author','$title','$volinfo','$year','$publisher','$city','$edition','$identifier','$pages','$_POST[Filesize]','$issue','$orientation','$dpi','$color','$cleaned','$language','$_POST[MD5]','$_POST[Extension]','$library','$commentary','$series','$periodical','$udc','$lbc','$coverurl')";
 	} else {
-		$sql="UPDATE $dbtable SET `Generic`='$generic',`Topic`='$topic',`Author`='$author',`Title`='$title',`VolumeInfo`='$volinfo',`Year`='$year',`Publisher`='$publisher',`Edition`='$edition',`Identifier`='$identifier',`Pages`='$pages',`Issue`='$issue',`Orientation`='$orientation',`DPI`='$dpi',`Color`='$color',`Cleaned`='$cleaned',`Language`='$language',`Extension`='$_POST[Extension]',`Library`='$library',`Commentary`='$commentary',`Series`='$series',`UDC`='$udc',`LBC`='$lbc' WHERE `MD5`='$_POST[MD5]' LIMIT 1";
+		$sql="UPDATE $dbtable SET `Generic`='$generic',`Topic`='$topic',`Author`='$author',`Title`='$title',`VolumeInfo`='$volinfo',`Year`='$year',`Publisher`='$publisher',`City`='$city',`Edition`='$edition',`Identifier`='$identifier',`Pages`='$pages',`Issue`='$issue',`Orientation`='$orientation',`DPI`='$dpi',`Color`='$color',`Cleaned`='$cleaned',`Language`='$language',`Extension`='$_POST[Extension]',`Library`='$library',`Commentary`='$commentary',`Series`='$series',`Periodical`='$periodical',`UDC`='$udc',`LBC`='$lbc',`Coverurl`='$coverurl' WHERE `MD5`='$_POST[MD5]' LIMIT 1";
 	}
 
 	if (!mysql_query($sql,$con))
@@ -102,7 +105,7 @@
 function clean($var){
 	$c = "'\\";
 	$str = str_replace("\t",' ',$_POST[$var]); // replace tabs
-//   $str = preg_replace('/\s\s+/',' ',$str); // delete multiple spaces
+//	$str = preg_replace('/\s\s+/',' ',$str); // delete multiple spaces
 	return trim(addcslashes($str,$c));
 }
 
